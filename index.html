@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WealthBride Investment</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Ethers.js for signature & MetaMask connectivity -->
+  <!-- Ethers.js for MetaMask signature -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <!-- NOTE: WalletConnect needs additional setup (see comments in script.js) -->
 </head>
 <body>
-  <!-- INTRO -->
   <header>
     <h1>WealthBride Investment</h1>
     <nav>
@@ -24,13 +22,13 @@
   <main id="home">
     <section class="intro">
       <h2 class="main-title">WEALTHBRIDE INVESTMENT</h2>
-      <p class="tagline">The future of wealth is digital. Grow your portfolio across Crypto, Stocks, Real Estate, and Bonds.</p>
+      <p class="tagline">Grow your portfolio across Crypto, Stocks, Real Estate, and Bonds.</p>
 
       <div class="connect-warning">
         <strong>Security:</strong> We never ask for your seed phrase or private key. Connect via MetaMask or WalletConnect only.
       </div>
 
-      <!-- Wallet Connect Buttons -->
+      <!-- Wallet Connect -->
       <div class="wallet-connect">
         <button id="connectMeta" class="btn">Connect MetaMask</button>
         <button id="connectWC" class="btn-secondary">Connect WalletConnect</button>
@@ -38,7 +36,7 @@
       </div>
     </section>
 
-    <!-- LIVE MULTI-COIN CHART -->
+    <!-- Chart -->
     <section class="chart">
       <h3>Live Market Overview</h3>
       <div class="tradingview-widget-container">
@@ -50,7 +48,7 @@
       </div>
     </section>
 
-    <!-- INVEST & DASHBOARD -->
+    <!-- Invest area -->
     <section class="hero">
       <div class="buttons">
         <button id="showForm" class="btn">Invest Now</button>
@@ -79,7 +77,7 @@
         </div>
       </div>
 
-      <!-- DASHBOARD -->
+      <!-- Dashboard -->
       <div id="dashboard" class="dashboard hidden" aria-live="polite">
         <h2>Welcome, <span id="dashName"></span></h2>
         <p><strong>Wallet:</strong> <span id="dashWallet"></span></p>
@@ -103,7 +101,6 @@
           <button id="withdrawBtn" class="btn-secondary">Request Withdraw</button>
         </div>
 
-        <!-- Back + Support -->
         <div class="dashboard-actions">
           <button id="backBtn" class="btn-secondary">Back to Home</button>
           <button id="supportBtn" class="btn-secondary">Contact Support</button>
@@ -111,7 +108,7 @@
       </div>
     </section>
 
-    <!-- SUPPORT SECTION (hidden until requested) -->
+    <!-- Support -->
     <section id="supportSection" class="support hidden" aria-hidden="true">
       <h3>Contact Support</h3>
       <p>If you have questions or need help, fill the form below. Our team will reach out within 24 hours.</p>
@@ -122,7 +119,7 @@
       <p id="supportStatus" class="support-status"></p>
     </section>
 
-    <!-- DEPOSIT MODAL -->
+    <!-- Deposit Modal -->
     <div id="depositModal" class="modal hidden" aria-hidden="true">
       <div class="modal-content">
         <h3>Make a Deposit</h3>
@@ -134,15 +131,16 @@
           <option value="card">Card (Stripe)</option>
           <option value="bank">Bank Transfer</option>
         </select>
+
         <div class="modal-actions">
           <button id="startDeposit" class="btn">Start Deposit</button>
-          <button id="closeDeposit" class="btn-secondary">Close</button>
+          <button id="closeDeposit" class="btn-secondary" data-close="deposit">Close</button>
         </div>
         <p id="depositMsg"></p>
       </div>
     </div>
 
-    <!-- WITHDRAWAL REQUEST MODAL (user request only) -->
+    <!-- Withdraw Modal -->
     <div id="withdrawModal" class="modal hidden" aria-hidden="true">
       <div class="modal-content">
         <h3>Request Withdrawal</h3>
@@ -150,9 +148,10 @@
         <input type="text" id="withdrawWallet" placeholder="0x..." />
         <label>Amount (USD)</label>
         <input type="number" id="withdrawAmount" placeholder="100" />
+
         <div class="modal-actions">
           <button id="submitWithdraw" class="btn">Submit Request</button>
-          <button id="closeWithdraw" class="btn-secondary">Close</button>
+          <button id="closeWithdraw" class="btn-secondary" data-close="withdraw">Close</button>
         </div>
         <p id="withdrawMsg"></p>
       </div>
