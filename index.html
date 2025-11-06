@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WealthBride Investment</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Ethers.js for MetaMask signature -->
+  <!-- Optional: ethers.js left in in case you later enable real flows -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 <body>
@@ -25,14 +25,17 @@
       <p class="tagline">Grow your portfolio across Crypto, Stocks, Real Estate, and Bonds.</p>
 
       <div class="connect-warning">
-        <strong>Security:</strong> We never ask for your seed phrase or private key. Connect via MetaMask or WalletConnect only.
+        <strong>Security:</strong> We never ask for your seed phrase or private key. Connect via MetaMask or use the demo connect.
       </div>
 
-      <!-- Wallet Connect -->
+      <!-- Wallet Connect (real if available, else simulated) -->
       <div class="wallet-connect">
-        <button id="connectMeta" class="btn">Connect MetaMask</button>
-        <button id="connectWC" class="btn-secondary">Connect WalletConnect</button>
+        <button id="connectMeta" class="btn">Connect Wallet</button>
+        <button id="connectWC" class="btn-secondary">WalletConnect (placeholder)</button>
         <p id="walletInfo" class="wallet-info">Not connected</p>
+        <div id="no-wallet" class="no-wallet hidden">
+          MetaMask not found. You can use the demo connect which creates a safe simulated wallet for testing.
+        </div>
       </div>
     </section>
 
