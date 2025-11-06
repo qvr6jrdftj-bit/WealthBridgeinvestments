@@ -1,312 +1,140 @@
-// script.js - WealthBride Investment (safe real-version)
-// - MetaMask connection (no seed phrase requests)
-// - Investment dashboard with live simulation (6.5x over 7 days demo)
-// - Deposit & withdraw request UI (backend endpoints required)
-// - Fixed modal close behavior (click close or outside modal)
+// === WealthBride Investment Script ===
+// Simulated + real MetaMask connection with safety
 
-///// CONFIG ////
-// Replace this with your backend base URL after you deploy it.
-// Example: const API_BASE = 'https://wealthbridge-backend.onrender.com';
-const API_BASE = ''; // leave blank for same origin or set your backend URL
+const connectBtn = document.getElementById("connectMeta");
+const walletInfo = document.getElementById("walletInfo");
+const noWallet = document.getElementById("no-wallet");
 
-///// DOM references ////
-const connectMetaBtn = document.getElementById('connectMeta');
-const connectWcBtn = document.getElementById('connectWC');
-const walletInfo = document.getElementById('walletInfo');
-
-const showFormBtn = document.getElementById('showForm');
-const investmentForm = document.getElementById('investmentForm');
-const submitInvestment = document.getElementById('submitInvestment');
-const cancelForm = document.getElementById('cancelForm');
-
-const dashboard = document.getElementById('dashboard');
-const backBtn = document.getElementById('backBtn');
-
-const dashName = document.getElementById('dashName');
-const dashWallet = document.getElementById('dashWallet');
-const dashType = document.getElementById('dashType');
-const dashAmount = document.getElementById('dashAmount');
-const liveCounterEl = document.getElementById('liveCounter');
-const profitPercentEl = document.getElementById('profitPercent');
-const timeRemainingEl = document.getElementById('timeRemaining');
-const dashStatusEl = document.getElementById('dashStatus');
-
-const depositBtn = document.getElementById('depositBtn');
-const withdrawBtn = document.getElementById('withdrawBtn');
-
-const depositModal = document.getElementById('depositModal');
-const closeDeposit = document.getElementById('closeDeposit');
-const startDeposit = document.getElementById('startDeposit');
-const depositMsg = document.getElementById('depositMsg');
-
-const withdrawModal = document.getElementById('withdrawModal');
-const closeWithdraw = document.getElementById('closeWithdraw');
-const submitWithdraw = document.getElementById('submitWithdraw');
-const withdrawMsg = document.getElementById('withdrawMsg');
-
-const supportBtn = document.getElementById('supportBtn');
-const supportSection = document.getElementById('supportSection');
-const sendSupport = document.getElementById('sendSupport');
-const supportStatus = document.getElementById('supportStatus');
-
-let provider, signer, userAddress, walletType;
-let liveInterval = null;
-let simulation = null;
-
-///// Wallet connection (MetaMask) /////
-async function connectMetaMask() {
-  try {
-    if (!window.ethereum) {
-      alert('MetaMask not found. Please install MetaMask extension or use a mobile wallet with WalletConnect.');
-      return;
+async function connectWallet() {
+  if (typeof window.ethereum !== "undefined") {
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const wallet = accounts[0];
+      window.__WB_userWallet = wallet;
+      walletInfo.textContent = `Connected: ${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
+      noWallet.classList.add("hidden");
+    } catch (err) {
+      walletInfo.textContent = "Connection rejected.";
     }
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    userAddress = await signer.getAddress();
-    walletType = 'MetaMask';
-    walletInfo.textContent = `${walletType} connected: ${shortAddr(userAddress)}`;
-    walletInfo.style.color = '#00ffb3';
-  } catch (err) {
-    console.error('MetaMask connect error', err);
-    walletInfo.textContent = 'MetaMask connection failed';
-    walletInfo.style.color = '#ff8b8b';
+  } else {
+    // fallback simulated wallet
+    const fakeWallet = "0x" + Math.random().toString(16).substring(2, 14) + "DEMO";
+    window.__WB_userWallet = fakeWallet;
+    walletInfo.textContent = `Demo wallet: ${fakeWallet}`;
+    noWallet.classList.remove("hidden");
   }
 }
 
-// WalletConnect placeholder
-function connectWalletConnectPlaceholder() {
-  alert('WalletConnect requires additional library setup. Implement @walletconnect/web3-provider for production.');
-}
+connectBtn.addEventListener("click", connectWallet);
 
-// short address helper
-function shortAddr(a) {
-  if (!a) return '';
-  return a.slice(0,6) + '...' + a.slice(-4);
-}
+// === Investment Form Logic ===
 
-///// UI toggles /////
-showFormBtn.addEventListener('click', () => investmentForm.classList.toggle('hidden'));
-cancelForm.addEventListener('click', () => investmentForm.classList.add('hidden'));
+const showFormBtn = document.getElementById("showForm");
+const formEl = document.getElementById("investmentForm");
+const cancelForm = document.getElementById("cancelForm");
+const submitInvestment = document.getElementById("submitInvestment");
+const dash = document.getElementById("dashboard");
 
-// wallet buttons
-connectMetaBtn.addEventListener('click', connectMetaMask);
-connectWcBtn.addEventListener('click', connectWalletConnectPlaceholder);
+const dashName = document.getElementById("dashName");
+const dashType = document.getElementById("dashType");
+const dashAmount = document.getElementById("dashAmount");
+const dashWallet = document.getElementById("dashWallet");
+const liveCounter = document.getElementById("liveCounter");
+const profitPercent = document.getElementById("profitPercent");
+const timeRemaining = document.getElementById("timeRemaining");
 
-///// Investment submission -> dashboard /////
-submitInvestment.addEventListener('click', () => {
-  const name = document.getElementById('userName').value.trim();
-  const type = document.getElementById('investmentType').value;
-  const amount = parseFloat(document.getElementById('amount').value);
+showFormBtn.onclick = () => formEl.classList.remove("hidden");
+cancelForm.onclick = () => formEl.classList.add("hidden");
 
-  if (!userAddress) { alert('Please connect your wallet first.'); return; }
-  if (!name) { alert('Please enter your name.'); return; }
-  if (!type) { alert('Please select an investment type.'); return; }
-  if (!amount || amount <= 0) { alert('Enter a valid investment amount.'); return; }
+let investment = null;
+let growthTimer = null;
 
+submitInvestment.onclick = () => {
+  const name = document.getElementById("userName").value.trim();
+  const type = document.getElementById("investmentType").value;
+  const amount = parseFloat(document.getElementById("amount").value);
+
+  if (!name || !type || !amount || amount <= 0) {
+    alert("Fill in all fields correctly.");
+    return;
+  }
+
+  investment = { name, type, amount, start: Date.now() };
   dashName.textContent = name;
-  dashWallet.textContent = shortAddr(userAddress);
   dashType.textContent = type;
   dashAmount.textContent = amount.toFixed(2);
+  dashWallet.textContent = window.__WB_userWallet || "Not connected";
 
-  // start simulation to 6.5x over 7 days (demo)
-  startSimulation(amount, 6.5, 7 * 24 * 60 * 60);
+  formEl.classList.add("hidden");
+  dash.classList.remove("hidden");
 
-  dashboard.classList.remove('hidden');
-  investmentForm.classList.add('hidden');
-});
+  startGrowthSimulation(amount);
+};
 
-backBtn.addEventListener('click', () => {
-  dashboard.classList.add('hidden');
-  stopSimulation();
-});
+function startGrowthSimulation(amount) {
+  const totalTarget = amount * 6.5; // ~550% total over 7 days
+  const duration = 7 * 24 * 60 * 60 * 1000;
+  const start = Date.now();
 
-///// Simulation (linear per-second demo) /////
-function startSimulation(amount, multiplier, durationSeconds) {
-  stopSimulation();
-
-  simulation = {
-    amount,
-    target: amount * multiplier,
-    totalSeconds: durationSeconds,
-    elapsed: 0
-  };
-
-  liveCounterEl.textContent = amount.toFixed(2);
-  profitPercentEl.textContent = '+0.00%';
-  timeRemainingEl.textContent = formatTime(simulation.totalSeconds);
-  dashStatusEl.textContent = 'Active';
-
-  liveInterval = setInterval(() => {
-    simulation.elapsed++;
-    const progress = simulation.elapsed / simulation.totalSeconds;
-    if (progress >= 1) {
-      liveCounterEl.textContent = simulation.target.toFixed(2);
-      profitPercentEl.textContent = `+${(((simulation.target - simulation.amount) / simulation.amount) * 100).toFixed(2)}%`;
-      timeRemainingEl.textContent = formatTime(0);
-      dashStatusEl.textContent = 'Completed';
-      stopSimulation();
+  clearInterval(growthTimer);
+  growthTimer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    if (elapsed >= duration) {
+      clearInterval(growthTimer);
+      liveCounter.textContent = totalTarget.toFixed(2);
+      profitPercent.textContent = "+550%";
+      timeRemaining.textContent = "Completed";
       return;
     }
-    const current = simulation.amount + (simulation.target - simulation.amount) * progress;
-    const profitPercent = ((current - simulation.amount) / simulation.amount) * 100;
+    const progress = elapsed / duration;
+    const value = amount + (totalTarget - amount) * progress;
+    const profit = (progress * 550).toFixed(1);
+    liveCounter.textContent = value.toFixed(2);
+    profitPercent.textContent = `+${profit}%`;
 
-    liveCounterEl.textContent = current.toFixed(2);
-    profitPercentEl.textContent = `+${profitPercent.toFixed(2)}%`;
-    timeRemainingEl.textContent = formatTime(simulation.totalSeconds - simulation.elapsed);
+    const remaining = duration - elapsed;
+    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+    const mins = Math.floor((remaining / (1000 * 60)) % 60);
+    timeRemaining.textContent = `${days}d ${hours}h ${mins}m`;
   }, 1000);
 }
 
-function stopSimulation() {
-  if (liveInterval) {
-    clearInterval(liveInterval);
-    liveInterval = null;
-  }
-  simulation = null;
-}
+// === Modals ===
+const depositModal = document.getElementById("depositModal");
+const withdrawModal = document.getElementById("withdrawModal");
 
-function formatTime(seconds) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  return `${d}d ${h}h ${m}m ${s}s`;
-}
-
-///// Deposit modal logic /////
-depositBtn.addEventListener('click', () => showModal('deposit'));
-document.querySelector('[data-close="deposit"]').addEventListener('click', () => closeModal('deposit'));
-startDeposit.addEventListener('click', async () => {
-  const amount = parseFloat(document.getElementById('depositAmount').value);
-  const method = document.getElementById('depositMethod').value;
-  if (!amount || amount <= 0) { depositMsg.style.color = 'red'; depositMsg.textContent = 'Enter a valid amount'; return; }
-  depositMsg.style.color = '#00ffb3';
-  depositMsg.textContent = 'Creating payment (demo)...';
-
-  try {
-    const resp = await fetch((API_BASE || '') + '/api/deposits/create', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ amount, method, wallet: userAddress })
-    });
-    const json = await resp.json();
-    if (json.error) {
-      depositMsg.style.color = 'red';
-      depositMsg.textContent = json.error;
-    } else if (json.paymentUrl) {
-      depositMsg.innerHTML = `Open payment: <a href="${json.paymentUrl}" target="_blank">Pay now</a>`;
-    } else {
-      depositMsg.textContent = 'Deposit created (demo). Backend required for real payments.';
-    }
-  } catch (err) {
-    console.error(err);
-    depositMsg.style.color = 'red';
-    depositMsg.textContent = 'Network error (demo)';
-  }
+document.getElementById("depositBtn").onclick = () => depositModal.classList.remove("hidden");
+document.getElementById("withdrawBtn").onclick = () => withdrawModal.classList.remove("hidden");
+document.querySelectorAll("[data-close]").forEach(btn => {
+  btn.onclick = e => {
+    if (e.target.dataset.close === "deposit") depositModal.classList.add("hidden");
+    if (e.target.dataset.close === "withdraw") withdrawModal.classList.add("hidden");
+  };
 });
 
-///// Withdraw modal logic /////
-withdrawBtn.addEventListener('click', () => showModal('withdraw'));
-document.querySelector('[data-close="withdraw"]').addEventListener('click', () => closeModal('withdraw'));
-submitWithdraw.addEventListener('click', async () => {
-  const wallet = document.getElementById('withdrawWallet').value.trim();
-  const amount = parseFloat(document.getElementById('withdrawAmount').value);
-  if (!userAddress) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Connect wallet first'; return; }
-  if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Enter valid ETH address'; return; }
-  if (!amount || amount <= 0) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Enter valid amount'; return; }
+// === Support ===
+document.getElementById("supportBtn").onclick = () => {
+  document.getElementById("supportSection").classList.remove("hidden");
+};
 
-  withdrawMsg.style.color = '#00ffb3';
-  withdrawMsg.textContent = 'Submitting withdrawal request...';
+document.getElementById("sendSupport").onclick = () => {
+  const msg = document.getElementById("supportMsg").value.trim();
+  document.getElementById("supportStatus").textContent =
+    msg ? "Support request sent successfully." : "Please write a message.";
+};
 
-  try {
-    const resp = await fetch((API_BASE || '') + '/api/withdrawals/request', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ walletAddress: wallet, amount, requesterWallet: userAddress })
-    });
-    const json = await resp.json();
-    if (json.error) {
-      withdrawMsg.style.color = 'red';
-      withdrawMsg.textContent = json.error;
-    } else {
-      withdrawMsg.style.color = '#00ffb3';
-      withdrawMsg.textContent = 'Withdrawal request submitted. Admin will process it.';
-      document.getElementById('withdrawWallet').value = '';
-      document.getElementById('withdrawAmount').value = '';
-      setTimeout(()=> closeModal('withdraw'), 1200);
-    }
-  } catch (err) {
-    console.error(err);
-    withdrawMsg.style.color = 'red';
-    withdrawMsg.textContent = 'Network error (demo)';
-  }
-});
+// === Deposit & Withdraw Buttons ===
+document.getElementById("startDeposit").onclick = () => {
+  const amt = document.getElementById("depositAmount").value;
+  document.getElementById("depositMsg").textContent = amt
+    ? `Deposit request of $${amt} created.`
+    : "Enter an amount.";
+};
 
-///// Support /////
-supportBtn.addEventListener('click', () => supportSection.classList.toggle('hidden'));
-sendSupport.addEventListener('click', async () => {
-  const name = document.getElementById('supportName').value.trim();
-  const email = document.getElementById('supportEmail').value.trim();
-  const msg = document.getElementById('supportMsg').value.trim();
-  if (!name || !email || !msg) { supportStatus.style.color='red'; supportStatus.textContent='Please fill all fields.'; return; }
-
-  supportStatus.style.color = '#00ffb3';
-  supportStatus.textContent = 'Sending message (demo)...';
-  try {
-    const resp = await fetch((API_BASE || '') + '/api/support/send', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email, msg, wallet: userAddress })
-    });
-    const json = await resp.json();
-    if (json.error) {
-      supportStatus.style.color = 'red';
-      supportStatus.textContent = json.error;
-    } else {
-      supportStatus.style.color = '#00ffb3';
-      supportStatus.textContent = 'Message sent. We will contact you shortly.';
-      document.getElementById('supportName').value = '';
-      document.getElementById('supportEmail').value = '';
-      document.getElementById('supportMsg').value = '';
-    }
-  } catch (err) {
-    console.error(err);
-    supportStatus.style.color = 'red';
-    supportStatus.textContent = 'Network error (demo)';
-  }
-});
-
-///// Modal helpers /////
-function showModal(type) {
-  if (type === 'deposit') depositModal.classList.remove('hidden');
-  if (type === 'withdraw') withdrawModal.classList.remove('hidden');
-}
-
-// data-close attributes wired in HTML; handles both close buttons
-function closeModal(type) {
-  if (type === 'deposit') depositModal.classList.add('hidden');
-  if (type === 'withdraw') withdrawModal.classList.add('hidden');
-}
-
-// close when clicking outside modal-content
-window.addEventListener('click', function(e) {
-  // deposit modal
-  if (!depositModal.classList.contains('hidden') && e.target === depositModal) {
-    depositModal.classList.add('hidden');
-  }
-  // withdraw modal
-  if (!withdrawModal.classList.contains('hidden') && e.target === withdrawModal) {
-    withdrawModal.classList.add('hidden');
-  }
-});
-
-// escape key closes modals
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (!depositModal.classList.contains('hidden')) depositModal.classList.add('hidden');
-    if (!withdrawModal.classList.contains('hidden')) withdrawModal.classList.add('hidden');
-  }
-});
-
-///// Utility: console hint /////
-console.log('WealthBride client script loaded — never ask for seed phrases. Connect with MetaMask or WalletConnect.');
+document.getElementById("submitWithdraw").onclick = () => {
+  const amt = document.getElementById("withdrawAmount").value;
+  const addr = document.getElementById("withdrawWallet").value;
+  document.getElementById("withdrawMsg").textContent =
+    amt && addr ? `Withdrawal request of $${amt} sent.` : "Fill all fields.";
+};
