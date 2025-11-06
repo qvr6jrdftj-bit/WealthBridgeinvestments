@@ -1,85 +1,226 @@
-:root {
-  --main-color: #00ffb3;
-  --dark-bg: #0b0b0b;
-  --text: #ffffff;
-  --muted: #bdbdbd;
-  --panel: #111;
-}
+/* === WealthBride Investment Styles === */
 
-* { box-sizing: border-box; }
-body {
-  font-family: Arial, sans-serif;
+* {
+  box-sizing: border-box;
   margin: 0;
-  background: var(--dark-bg);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
 }
 
-/* Header */
+body {
+  background-color: #0a0a0f;
+  color: #eaeaea;
+  line-height: 1.6;
+}
+
 header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 28px; background: #070707; border-bottom:1px solid #111;
-}
-header h1 { color: var(--main-color); margin:0; font-size:1.1rem; letter-spacing:1px;}
-header nav a { color:var(--muted); margin-left:18px; text-decoration:none; font-size:0.95rem;}
-
-/* Intro */
-.intro { text-align:center; padding:54px 18px 18px; }
-.main-title { font-size:2.4rem; color:var(--main-color); margin:0 0 12px; font-weight:800; text-transform:uppercase; }
-.tagline { color:var(--muted); max-width:760px; margin:0 auto 18px; }
-
-/* Warning */
-.connect-warning { max-width:760px; margin:12px auto; color:#ffd18f; font-size:0.95rem; }
-
-/* Wallet connect */
-.wallet-connect { margin-top:12px; display:flex; align-items:center; gap:12px; justify-content:center; flex-wrap:wrap; }
-.wallet-info { margin-top:8px; color:var(--main-color); }
-
-/* Chart */
-.chart { text-align:center; width:95%; max-width:980px; margin: 10px auto 30px; }
-.chart h3 { color:var(--main-color); margin-bottom:10px; }
-
-/* Buttons */
-.btn, .btn-secondary {
-  display:inline-block; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;
-}
-.btn { background:var(--main-color); color:#000; border:none; }
-.btn-secondary { background:transparent; color:var(--main-color); border:2px solid var(--main-color); }
-
-/* Form */
-.form { margin:18px auto; max-width:640px; background: var(--panel); padding:18px; border-radius:10px; text-align:center; }
-.form input, .form select { width:100%; max-width:420px; padding:10px; margin:8px 0; border-radius:6px; border:none; background:#1a1a1a; color:var(--text); }
-
-/* Dashboard */
-.dashboard { margin:18px auto 40px; max-width:880px; background: linear-gradient(180deg,#090909, #0e0e0e); padding:20px; border-radius:10px; border:1px solid #222; }
-.dashboard h2 { text-align:center; color:var(--main-color); margin-top:0; }
-.dashboard p { margin:8px 0; color:var(--muted); }
-.chart-preview { margin-top:14px; }
-.fund-controls { display:flex; gap:10px; justify-content:center; margin-top:14px; }
-.dashboard-actions { display:flex; gap:10px; justify-content:center; margin-top:12px; }
-
-/* Live value style */
-#liveCounter { color: #00ff88; font-weight:800; font-size:1.1rem; }
-#profitPercent { color: #8cf08c; font-weight:700; }
-
-/* Support */
-.support { margin:18px auto; max-width:700px; padding:18px; background:var(--panel); border-radius:10px; }
-.support input, .support textarea { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:none; background:#1a1a1a; color:var(--text); }
-.support-status { color:var(--main-color); text-align:center; margin-top:8px; }
-
-/* Modal */
-.modal { position:fixed; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.6); z-index:2000; padding:20px; }
-.modal.hidden { display:none; }
-.modal-content { width:100%; max-width:420px; background:var(--panel); padding:18px; border-radius:10px; border:1px solid #222; text-align:left; }
-.modal-content label { color:var(--muted); font-size:0.9rem; display:block; margin-top:8px; }
-.modal-actions { display:flex; gap:10px; margin-top:12px; justify-content:flex-end; }
-
-/* small screens */
-@media (max-width:600px) {
-  .wallet-connect { flex-direction:column; }
-  header { padding:12px; }
-  .main-title { font-size:1.6rem; }
-  .chart { padding:0 6px; }
+  background: #111;
+  color: #fff;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-footer { text-align:center; padding:18px; color:var(--muted); margin-top:40px; border-top:1px solid #111; }
+header h1 {
+  font-size: 1.5rem;
+  color: #0ff;
+}
+
+nav a {
+  color: #ddd;
+  margin: 0 12px;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #0ff;
+}
+
+.main-title {
+  font-size: 2rem;
+  margin: 30px 0 10px;
+  color: #00e0ff;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.tagline {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  color: #bbb;
+}
+
+.connect-warning {
+  text-align: center;
+  font-size: 0.9rem;
+  background: #191919;
+  border: 1px solid #333;
+  margin: 20px auto;
+  padding: 10px;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 6px;
+  color: #fdd835;
+}
+
+.wallet-connect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.wallet-info {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #0ff;
+}
+
+.no-wallet {
+  color: #f44;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.btn,
+.btn-secondary {
+  padding: 10px 16px;
+  margin: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+
+.btn {
+  background-color: #00e0ff;
+  color: #000;
+  font-weight: bold;
+}
+
+.btn:hover {
+  background-color: #00b8d4;
+}
+
+.btn-secondary {
+  background: #333;
+  color: #fff;
+}
+
+.btn-secondary:hover {
+  background: #555;
+}
+
+.hero {
+  text-align: center;
+  margin: 30px auto;
+  width: 90%;
+  max-width: 700px;
+}
+
+.form {
+  background: #111;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #222;
+  margin-top: 20px;
+}
+
+.form h3 {
+  margin: 10px 0;
+  color: #00e0ff;
+}
+
+.form input,
+.form select,
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 10px;
+  background: #1a1a1a;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+
+.dashboard {
+  background: #111;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #222;
+  text-align: left;
+  margin-top: 20px;
+}
+
+.dashboard h2 {
+  color: #00e0ff;
+}
+
+.chart-preview {
+  margin-top: 15px;
+}
+
+.support {
+  background: #111;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #222;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 600px;
+}
+
+.support input,
+.support textarea {
+  margin-bottom: 10px;
+}
+
+.support-status {
+  margin-top: 10px;
+  color: #0ff;
+  font-size: 0.9rem;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #111;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal-actions {
+  text-align: center;
+  margin-top: 10px;
+}
+
+footer {
+  background: #111;
+  padding: 15px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 40px;
+}
