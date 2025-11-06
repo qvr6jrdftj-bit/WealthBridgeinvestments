@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WealthBride Investment</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Ethers.js for signature & MetaMask connectivity -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <!-- NOTE: WalletConnect needs additional setup (see comments in script.js) -->
+</head>
+<body>
+  <!-- INTRO -->
+  <header>
+    <h1>WealthBride Investment</h1>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#plans">Plans</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="intro">
+      <h2 class="main-title">WEALTHBRIDE INVESTMENT</h2>
+      <p class="tagline">The future of wealth is digital. Grow your portfolio across Crypto, Stocks, Real Estate, and Bonds.</p>
+
+      <div class="connect-warning">
+        <strong>Security:</strong> We never ask for your seed phrase or private key. Connect via MetaMask or WalletConnect only.
+      </div>
+
+      <!-- Wallet Connect Buttons -->
+      <div class="wallet-connect">
+        <button id="connectMeta" class="btn">Connect MetaMask</button>
+        <button id="connectWC" class="btn-secondary">Connect WalletConnect</button>
+        <p id="walletInfo" class="wallet-info">Not connected</p>
+      </div>
+    </section>
+
+    <!-- LIVE MULTI-COIN CHART -->
+    <section class="chart">
+      <h3>Live Market Overview</h3>
+      <div class="tradingview-widget-container">
+        <iframe
+          src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_multi&amp;symbol=BINANCE:BTCUSDT&amp;symbol=BINANCE:ETHUSDT&amp;symbol=BINANCE:BNBUSDT&amp;symbol=BINANCE:SOLUSDT&amp;symbol=BINANCE:XRPUSDT&amp;interval=60&amp;hidesidetoolbar=1&amp;hidetoptoolbar=1&amp;theme=dark&amp;style=1&amp;locale=en"
+          style="width:100%; height:420px; border:none;"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </section>
+
+    <!-- INVEST & DASHBOARD -->
+    <section class="hero">
+      <div class="buttons">
+        <button id="showForm" class="btn">Invest Now</button>
+      </div>
+
+      <!-- Investment Form -->
+      <div id="investmentForm" class="form hidden">
+        <h3>Enter Your Name</h3>
+        <input type="text" id="userName" placeholder="Full name" />
+
+        <h3>Select Investment Type</h3>
+        <select id="investmentType">
+          <option value="">-- Choose an option --</option>
+          <option value="Crypto">Crypto</option>
+          <option value="Real Estate">Real Estate</option>
+          <option value="Stocks">Stocks</option>
+          <option value="Bonds">Bonds</option>
+        </select>
+
+        <h3>Enter Investment Amount (USD)</h3>
+        <input type="number" id="amount" placeholder="Enter amount in USD" />
+
+        <div class="form-actions">
+          <button id="submitInvestment" class="btn">Submit</button>
+          <button id="cancelForm" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="dashboard" class="dashboard hidden" aria-live="polite">
+        <h2>Welcome, <span id="dashName"></span></h2>
+        <p><strong>Wallet:</strong> <span id="dashWallet"></span></p>
+        <p><strong>Investment Type:</strong> <span id="dashType"></span></p>
+        <p><strong>Amount Invested:</strong> $<span id="dashAmount"></span></p>
+        <p><strong>Live Balance:</strong> $<span id="liveCounter">0.00</span></p>
+        <p><strong>Profit:</strong> <span id="profitPercent">+0%</span></p>
+        <p><strong>Time Remaining:</strong> <span id="timeRemaining">0d 0h 0m 0s</span></p>
+        <p><strong>Status:</strong> <span id="dashStatus">Active</span></p>
+
+        <div class="chart-preview">
+          <iframe
+            src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:BTCUSDT&interval=60&theme=dark&style=1"
+            style="width:100%; height:300px; border:none;"
+          ></iframe>
+        </div>
+
+        <!-- Deposit & Withdraw Controls -->
+        <div class="fund-controls">
+          <button id="depositBtn" class="btn">Deposit</button>
+          <button id="withdrawBtn" class="btn-secondary">Request Withdraw</button>
+        </div>
+
+        <!-- Back + Support -->
+        <div class="dashboard-actions">
+          <button id="backBtn" class="btn-secondary">Back to Home</button>
+          <button id="supportBtn" class="btn-secondary">Contact Support</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPORT SECTION (hidden until requested) -->
+    <section id="supportSection" class="support hidden" aria-hidden="true">
+      <h3>Contact Support</h3>
+      <p>If you have questions or need help, fill the form below. Our team will reach out within 24 hours.</p>
+      <input type="text" id="supportName" placeholder="Your name" />
+      <input type="email" id="supportEmail" placeholder="Your email" />
+      <textarea id="supportMsg" placeholder="Describe your issue..."></textarea>
+      <button id="sendSupport" class="btn">Send Message</button>
+      <p id="supportStatus" class="support-status"></p>
+    </section>
+
+    <!-- DEPOSIT MODAL -->
+    <div id="depositModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-content">
+        <h3>Make a Deposit</h3>
+        <label>Amount (USD)</label>
+        <input type="number" id="depositAmount" placeholder="100" />
+        <label>Payment Method</label>
+        <select id="depositMethod">
+          <option value="crypto">Crypto</option>
+          <option value="card">Card (Stripe)</option>
+          <option value="bank">Bank Transfer</option>
+        </select>
+        <div class="modal-actions">
+          <button id="startDeposit" class="btn">Start Deposit</button>
+          <button id="closeDeposit" class="btn-secondary">Close</button>
+        </div>
+        <p id="depositMsg"></p>
+      </div>
+    </div>
+
+    <!-- WITHDRAWAL REQUEST MODAL (user request only) -->
+    <div id="withdrawModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-content">
+        <h3>Request Withdrawal</h3>
+        <label>Wallet Address</label>
+        <input type="text" id="withdrawWallet" placeholder="0x..." />
+        <label>Amount (USD)</label>
+        <input type="number" id="withdrawAmount" placeholder="100" />
+        <div class="modal-actions">
+          <button id="submitWithdraw" class="btn">Submit Request</button>
+          <button id="closeWithdraw" class="btn-secondary">Close</button>
+        </div>
+        <p id="withdrawMsg"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer id="contact">
+    <p>&copy; 2025 WealthBride Investment. All rights reserved.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
