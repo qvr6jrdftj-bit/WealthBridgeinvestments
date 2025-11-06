@@ -1,13 +1,15 @@
-// WealthBride Investment - client-side script
-// Features:
-// - MetaMask connect & signature verification flow (client-side only)
-// - Investment form -> dashboard with live simulated growth to 6.5x over 7 days
-// - Deposit and withdraw request UI (POSTs to /api endpoints - backend needed to process)
-// - Support contact form
-// - DOES NOT request or store seed phrases/private keys (never do this)
+// script.js - WealthBride Investment (safe real-version)
+// - MetaMask connection (no seed phrase requests)
+// - Investment dashboard with live simulation (6.5x over 7 days demo)
+// - Deposit & withdraw request UI (backend endpoints required)
+// - Fixed modal close behavior (click close or outside modal)
 
-// -----------------------------
-// DOM references
+///// CONFIG ////
+// Replace this with your backend base URL after you deploy it.
+// Example: const API_BASE = 'https://wealthbridge-backend.onrender.com';
+const API_BASE = ''; // leave blank for same origin or set your backend URL
+
+///// DOM references ////
 const connectMetaBtn = document.getElementById('connectMeta');
 const connectWcBtn = document.getElementById('connectWC');
 const walletInfo = document.getElementById('walletInfo');
@@ -47,13 +49,11 @@ const supportSection = document.getElementById('supportSection');
 const sendSupport = document.getElementById('sendSupport');
 const supportStatus = document.getElementById('supportStatus');
 
-// Misc
 let provider, signer, userAddress, walletType;
 let liveInterval = null;
 let simulation = null;
 
-// -----------------------------
-// Wallet connection (MetaMask)
+///// Wallet connection (MetaMask) /////
 async function connectMetaMask() {
   try {
     if (!window.ethereum) {
@@ -65,12 +65,8 @@ async function connectMetaMask() {
     signer = provider.getSigner();
     userAddress = await signer.getAddress();
     walletType = 'MetaMask';
-    walletInfo.textContent = `${walletType} connected: ${userAddress}`;
+    walletInfo.textContent = `${walletType} connected: ${shortAddr(userAddress)}`;
     walletInfo.style.color = '#00ffb3';
-
-    // OPTIONAL: verify ownership with server nonce flow:
-    // getNonce -> signer.signMessage(nonce) -> POST to /api/auth/verify
-    // (server-side endpoints are required)
   } catch (err) {
     console.error('MetaMask connect error', err);
     walletInfo.textContent = 'MetaMask connection failed';
@@ -78,94 +74,68 @@ async function connectMetaMask() {
   }
 }
 
-// -----------------------------
-// WalletConnect (placeholder)
-// Full WalletConnect integration requires adding @walletconnect/web3-provider and wiring.
-// For demo, we show a message and you can implement actual provider in production.
+// WalletConnect placeholder
 function connectWalletConnectPlaceholder() {
-  alert('WalletConnect integration requires additional setup. See comments in script.js to implement using @walletconnect/web3-provider.');
+  alert('WalletConnect requires additional library setup. Implement @walletconnect/web3-provider for production.');
 }
 
-// -----------------------------
-// UI toggles
-showFormBtn.addEventListener('click', () => {
-  investmentForm.classList.toggle('hidden');
-});
-cancelForm.addEventListener('click', () => {
-  investmentForm.classList.add('hidden');
-});
+// short address helper
+function shortAddr(a) {
+  if (!a) return '';
+  return a.slice(0,6) + '...' + a.slice(-4);
+}
 
-// wire wallet buttons
+///// UI toggles /////
+showFormBtn.addEventListener('click', () => investmentForm.classList.toggle('hidden'));
+cancelForm.addEventListener('click', () => investmentForm.classList.add('hidden'));
+
+// wallet buttons
 connectMetaBtn.addEventListener('click', connectMetaMask);
 connectWcBtn.addEventListener('click', connectWalletConnectPlaceholder);
 
-// -----------------------------
-// Investment submission -> show dashboard with simulation
+///// Investment submission -> dashboard /////
 submitInvestment.addEventListener('click', () => {
   const name = document.getElementById('userName').value.trim();
   const type = document.getElementById('investmentType').value;
   const amount = parseFloat(document.getElementById('amount').value);
 
-  if (!userAddress) {
-    alert('Please connect your wallet first.');
-    return;
-  }
-  if (!name) {
-    alert('Please enter your name.');
-    return;
-  }
-  if (!type) {
-    alert('Please select an investment type.');
-    return;
-  }
-  if (!amount || amount <= 0) {
-    alert('Enter a valid investment amount.');
-    return;
-  }
+  if (!userAddress) { alert('Please connect your wallet first.'); return; }
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!type) { alert('Please select an investment type.'); return; }
+  if (!amount || amount <= 0) { alert('Enter a valid investment amount.'); return; }
 
-  // Populate dashboard
   dashName.textContent = name;
-  dashWallet.textContent = userAddress;
+  dashWallet.textContent = shortAddr(userAddress);
   dashType.textContent = type;
   dashAmount.textContent = amount.toFixed(2);
 
-  // Start simulated growth to 6.5x over 7 days
-  startSimulation(amount, 6.5, 7 * 24 * 60 * 60); // 7 days
+  // start simulation to 6.5x over 7 days (demo)
+  startSimulation(amount, 6.5, 7 * 24 * 60 * 60);
 
-  // Show dashboard and hide form
   dashboard.classList.remove('hidden');
   investmentForm.classList.add('hidden');
 });
 
-// Back button
 backBtn.addEventListener('click', () => {
   dashboard.classList.add('hidden');
   stopSimulation();
 });
 
-// -----------------------------
-// Simulation: linear progress per second toward target (client-side demo)
-// amount: starting USD amount
-// multiplier: e.g. 6.5 (for 650% final amount)
-// durationSeconds: seconds to reach (e.g., 7 days = 604800)
+///// Simulation (linear per-second demo) /////
 function startSimulation(amount, multiplier, durationSeconds) {
-  stopSimulation(); // clear old interval if any
+  stopSimulation();
 
-  const start = Date.now();
-  const totalSeconds = durationSeconds;
-  const target = amount * multiplier;
-  let elapsed = 0;
+  simulation = {
+    amount,
+    target: amount * multiplier,
+    totalSeconds: durationSeconds,
+    elapsed: 0
+  };
 
   liveCounterEl.textContent = amount.toFixed(2);
   profitPercentEl.textContent = '+0.00%';
-  timeRemainingEl.textContent = formatTime(totalSeconds);
-
+  timeRemainingEl.textContent = formatTime(simulation.totalSeconds);
   dashStatusEl.textContent = 'Active';
-
-  // update once per second
-  simulation = {
-    amount, target, totalSeconds, elapsed
-  };
 
   liveInterval = setInterval(() => {
     simulation.elapsed++;
@@ -203,43 +173,30 @@ function formatTime(seconds) {
   return `${d}d ${h}h ${m}m ${s}s`;
 }
 
-// -----------------------------
-// Deposit modal logic (front-end only - needs backend to process real payments)
-depositBtn.addEventListener('click', () => {
-  depositModal.classList.remove('hidden');
-});
-closeDeposit.addEventListener('click', () => {
-  depositModal.classList.add('hidden');
-});
+///// Deposit modal logic /////
+depositBtn.addEventListener('click', () => showModal('deposit'));
+document.querySelector('[data-close="deposit"]').addEventListener('click', () => closeModal('deposit'));
 startDeposit.addEventListener('click', async () => {
   const amount = parseFloat(document.getElementById('depositAmount').value);
   const method = document.getElementById('depositMethod').value;
-
-  if (!amount || amount <= 0) {
-    depositMsg.style.color = 'red';
-    depositMsg.textContent = 'Enter a valid amount';
-    return;
-  }
-  depositMsg.style.color = varOrDefault('--main-color', '#00ffb3');
+  if (!amount || amount <= 0) { depositMsg.style.color = 'red'; depositMsg.textContent = 'Enter a valid amount'; return; }
+  depositMsg.style.color = '#00ffb3';
   depositMsg.textContent = 'Creating payment (demo)...';
 
-  // Example: POST to /api/deposits/create -> backend creates payment session (Stripe / crypto invoice)
   try {
-    const resp = await fetch('/api/deposits/create', {
+    const resp = await fetch((API_BASE || '') + '/api/deposits/create', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ amount, method, wallet: userAddress })
     });
     const json = await resp.json();
     if (json.error) {
       depositMsg.style.color = 'red';
       depositMsg.textContent = json.error;
-      return;
-    }
-    if (json.paymentUrl) {
+    } else if (json.paymentUrl) {
       depositMsg.innerHTML = `Open payment: <a href="${json.paymentUrl}" target="_blank">Pay now</a>`;
     } else {
-      depositMsg.textContent = 'Deposit request created (demo). Backend required to complete payment.';
+      depositMsg.textContent = 'Deposit created (demo). Backend required for real payments.';
     }
   } catch (err) {
     console.error(err);
@@ -248,41 +205,23 @@ startDeposit.addEventListener('click', async () => {
   }
 });
 
-// -----------------------------
-// Withdraw request (user side) -> stored as request for admin to approve
-withdrawBtn.addEventListener('click', () => {
-  withdrawModal.classList.remove('hidden');
-});
-closeWithdraw.addEventListener('click', () => {
-  withdrawModal.classList.add('hidden');
-});
+///// Withdraw modal logic /////
+withdrawBtn.addEventListener('click', () => showModal('withdraw'));
+document.querySelector('[data-close="withdraw"]').addEventListener('click', () => closeModal('withdraw'));
 submitWithdraw.addEventListener('click', async () => {
   const wallet = document.getElementById('withdrawWallet').value.trim();
   const amount = parseFloat(document.getElementById('withdrawAmount').value);
+  if (!userAddress) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Connect wallet first'; return; }
+  if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Enter valid ETH address'; return; }
+  if (!amount || amount <= 0) { withdrawMsg.style.color='red'; withdrawMsg.textContent='Enter valid amount'; return; }
 
-  if (!userAddress) {
-    withdrawMsg.style.color = 'red';
-    withdrawMsg.textContent = 'Connect wallet first';
-    return;
-  }
-  if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
-    withdrawMsg.style.color = 'red';
-    withdrawMsg.textContent = 'Enter a valid Ethereum address (0x...)';
-    return;
-  }
-  if (!amount || amount <= 0) {
-    withdrawMsg.style.color = 'red';
-    withdrawMsg.textContent = 'Enter a valid amount';
-    return;
-  }
-
-  withdrawMsg.style.color = varOrDefault('--main-color', '#00ffb3');
+  withdrawMsg.style.color = '#00ffb3';
   withdrawMsg.textContent = 'Submitting withdrawal request...';
 
   try {
-    const resp = await fetch('/api/withdrawals/request', {
+    const resp = await fetch((API_BASE || '') + '/api/withdrawals/request', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ walletAddress: wallet, amount, requesterWallet: userAddress })
     });
     const json = await resp.json();
@@ -290,12 +229,11 @@ submitWithdraw.addEventListener('click', async () => {
       withdrawMsg.style.color = 'red';
       withdrawMsg.textContent = json.error;
     } else {
-      withdrawMsg.style.color = varOrDefault('--main-color', '#00ffb3');
+      withdrawMsg.style.color = '#00ffb3';
       withdrawMsg.textContent = 'Withdrawal request submitted. Admin will process it.';
-      // optionally clear fields and close
       document.getElementById('withdrawWallet').value = '';
       document.getElementById('withdrawAmount').value = '';
-      setTimeout(()=> withdrawModal.classList.add('hidden'), 1200);
+      setTimeout(()=> closeModal('withdraw'), 1200);
     }
   } catch (err) {
     console.error(err);
@@ -304,27 +242,18 @@ submitWithdraw.addEventListener('click', async () => {
   }
 });
 
-// -----------------------------
-// Support contact
-supportBtn.addEventListener('click', () => {
-  supportSection.classList.toggle('hidden');
-});
+///// Support /////
+supportBtn.addEventListener('click', () => supportSection.classList.toggle('hidden'));
 sendSupport.addEventListener('click', async () => {
   const name = document.getElementById('supportName').value.trim();
   const email = document.getElementById('supportEmail').value.trim();
   const msg = document.getElementById('supportMsg').value.trim();
+  if (!name || !email || !msg) { supportStatus.style.color='red'; supportStatus.textContent='Please fill all fields.'; return; }
 
-  if (!name || !email || !msg) {
-    supportStatus.style.color = 'red';
-    supportStatus.textContent = 'Please fill all fields.';
-    return;
-  }
-
-  supportStatus.style.color = varOrDefault('--main-color', '#00ffb3');
+  supportStatus.style.color = '#00ffb3';
   supportStatus.textContent = 'Sending message (demo)...';
-
   try {
-    const resp = await fetch('/api/support/send', {
+    const resp = await fetch((API_BASE || '') + '/api/support/send', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ name, email, msg, wallet: userAddress })
@@ -334,7 +263,7 @@ sendSupport.addEventListener('click', async () => {
       supportStatus.style.color = 'red';
       supportStatus.textContent = json.error;
     } else {
-      supportStatus.style.color = varOrDefault('--main-color', '#00ffb3');
+      supportStatus.style.color = '#00ffb3';
       supportStatus.textContent = 'Message sent. We will contact you shortly.';
       document.getElementById('supportName').value = '';
       document.getElementById('supportEmail').value = '';
@@ -347,22 +276,37 @@ sendSupport.addEventListener('click', async () => {
   }
 });
 
-// -----------------------------
-// Helper: fallback for CSS var color usage in JS
-function varOrDefault(name, fallback) {
-  try {
-    const val = getComputedStyle(document.documentElement).getPropertyValue(name);
-    return val ? val.trim() : fallback;
-  } catch (e) {
-    return fallback;
-  }
+///// Modal helpers /////
+function showModal(type) {
+  if (type === 'deposit') depositModal.classList.remove('hidden');
+  if (type === 'withdraw') withdrawModal.classList.remove('hidden');
 }
 
-/* -----------------------------
-  Notes & next steps (important)
-  - This is a front-end demo + UI. To process payments, deposits, withdrawals, and to verify signatures you must
-    implement server-side endpoints (/api/...) and secure admin endpoints.
-  - NEVER ask users for their seed phrase or private key. This code does not ask for that.
-  - For WalletConnect: integrate @walletconnect/web3-provider on server/bundler side and replace placeholder.
-  - For production, use HTTPS, a real backend, authentication, nonce-based signature verification, and audit logging.
------------------------------ */
+// data-close attributes wired in HTML; handles both close buttons
+function closeModal(type) {
+  if (type === 'deposit') depositModal.classList.add('hidden');
+  if (type === 'withdraw') withdrawModal.classList.add('hidden');
+}
+
+// close when clicking outside modal-content
+window.addEventListener('click', function(e) {
+  // deposit modal
+  if (!depositModal.classList.contains('hidden') && e.target === depositModal) {
+    depositModal.classList.add('hidden');
+  }
+  // withdraw modal
+  if (!withdrawModal.classList.contains('hidden') && e.target === withdrawModal) {
+    withdrawModal.classList.add('hidden');
+  }
+});
+
+// escape key closes modals
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!depositModal.classList.contains('hidden')) depositModal.classList.add('hidden');
+    if (!withdrawModal.classList.contains('hidden')) withdrawModal.classList.add('hidden');
+  }
+});
+
+///// Utility: console hint /////
+console.log('WealthBride client script loaded — never ask for seed phrases. Connect with MetaMask or WalletConnect.');
